@@ -1,0 +1,40 @@
+# Dependencies and builds
+node_modules/
+dist/
+build/
+prisma/generated/
+*.zip
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# AI tools
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+GEMINI.md
+.gemini/
+.cursor/
+.cursorrules
+.windsurf/
+.windsurfrules
+.aider*
+.continue/
+.codeium/
+.github/copilot-instructions.md
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
