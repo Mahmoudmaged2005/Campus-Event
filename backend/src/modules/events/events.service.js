@@ -1,5 +1,6 @@
 import { db } from '../../db/client.js';
 import { AppError } from '../../shared/errors.js';
+import { ensureNoClash, checkPlaceAndTime } from './clash.service.js';
 
 const includeCategory = { category: { select: { id: true, name: true } } };
 
@@ -25,6 +26,20 @@ async function findOwnedEvent(eventId, organizerId) {
     throw new AppError(404, 'Event not found');
   }
   return event;
+}
+
+function mergePlaceAndTime(event, changes) {
+  const merged = { location: event.location, startsAt: event.startsAt, endsAt: event.endsAt };
+  if (changes.location !== undefined) {
+    merged.location = changes.location;
+  }
+  if (changes.startsAt !== undefined) {
+    merged.startsAt = changes.startsAt;
+  }
+  if (changes.endsAt !== undefined) {
+    merged.endsAt = changes.endsAt;
+  }
+  return merged;
 }
 
 function checkCanEdit(event) {
@@ -63,9 +78,15 @@ export async function getEventForUser(eventId, user) {
   return event;
 }
 
+export async function checkAvailability(input) {
+  checkTimes(input.startsAt, input.endsAt);
+  return checkPlaceAndTime(input.location, input.startsAt, input.endsAt, input.ignoreEventId);
+}
+
 export async function createEvent(organizerId, input) {
   checkTimes(input.startsAt, input.endsAt);
   await checkCategory(input.categoryId);
+  await ensureNoClash(input.location, input.startsAt, input.endsAt);
   return db().event.create({
     data: {
       title: input.title,
@@ -86,14 +107,14 @@ export async function updateEvent(eventId, organizerId, changes) {
   const event = await findOwnedEvent(eventId, organizerId);
   checkCanEdit(event);
 
+  const placeAndTime = mergePlaceAndTime(event, changes);
   if (changes.startsAt !== undefined || changes.endsAt !== undefined) {
-    const newStartsAt = changes.startsAt || event.startsAt;
-    const newEndsAt = changes.endsAt || event.endsAt;
-    checkTimes(newStartsAt, newEndsAt);
+    checkTimes(placeAndTime.startsAt, placeAndTime.endsAt);
   }
   if (changes.categoryId !== undefined) {
     await checkCategory(changes.categoryId);
   }
+  await ensureNoClash(placeAndTime.location, placeAndTime.startsAt, placeAndTime.endsAt, eventId);
 
   const data = { ...changes };
   if (event.status === 'REJECTED') {

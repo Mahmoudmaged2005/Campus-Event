@@ -35,6 +35,10 @@ function hasAtLeastOneField(changes) {
 
 export const createEventSchema = eventFields;
 
+export const checkPlaceSchema = eventFields
+  .pick({ location: true, startsAt: true, endsAt: true })
+  .extend({ ignoreEventId: z.number().int().positive().optional() });
+
 export const updateEventSchema = eventFields
   .partial()
   .refine(hasAtLeastOneField, 'Send at least one field to change');

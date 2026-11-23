@@ -24,6 +24,11 @@ export async function getOne(req, res) {
   res.json({ event: event });
 }
 
+export async function check(req, res) {
+  const result = await eventsService.checkAvailability(req.body);
+  res.json(result);
+}
+
 export async function create(req, res) {
   const event = await eventsService.createEvent(req.user.id, req.body);
   res.status(201).json({ event: event });
