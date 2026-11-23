@@ -1,0 +1,122 @@
+import { db } from '../../db/client.js';
+import { AppError } from '../../shared/errors.js';
+
+const includeCategory = { category: { select: { id: true, name: true } } };
+
+function checkTimes(startsAt, endsAt) {
+  if (endsAt <= startsAt) {
+    throw new AppError(400, 'The end time must be after the start time');
+  }
+  if (startsAt <= new Date()) {
+    throw new AppError(400, 'The start time must be in the future');
+  }
+}
+
+async function checkCategory(categoryId) {
+  const category = await db().category.findUnique({ where: { id: categoryId } });
+  if (category === null || !category.isActive) {
+    throw new AppError(400, 'This category does not exist or is not active');
+  }
+}
+
+async function findOwnedEvent(eventId, organizerId) {
+  const event = await db().event.findUnique({ where: { id: eventId } });
+  if (event === null || event.organizerId !== organizerId) {
+    throw new AppError(404, 'Event not found');
+  }
+  return event;
+}
+
+function checkCanEdit(event) {
+  if (event.status === 'APPROVED') {
+    throw new AppError(409, 'Approved events cannot be edited');
+  }
+  if (event.status !== 'PENDING' && event.status !== 'REJECTED') {
+    throw new AppError(409, 'This event cannot be edited because it is ' + event.status);
+  }
+}
+
+export async function listActiveCategories() {
+  return db().category.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  });
+}
+
+export async function listMyEvents(organizerId) {
+  return db().event.findMany({
+    where: { organizerId: organizerId },
+    include: includeCategory,
+    orderBy: { startsAt: 'asc' },
+  });
+}
+
+export async function getEventForUser(eventId, user) {
+  const event = await db().event.findUnique({ where: { id: eventId }, include: includeCategory });
+  if (event === null) {
+    throw new AppError(404, 'Event not found');
+  }
+  if (user.role !== 'ADMIN' && event.organizerId !== user.id) {
+    throw new AppError(404, 'Event not found');
+  }
+  return event;
+}
+
+export async function createEvent(organizerId, input) {
+  checkTimes(input.startsAt, input.endsAt);
+  await checkCategory(input.categoryId);
+  return db().event.create({
+    data: {
+      title: input.title,
+      description: input.description,
+      location: input.location,
+      startsAt: input.startsAt,
+      endsAt: input.endsAt,
+      capacity: input.capacity,
+      categoryId: input.categoryId,
+      organizerId: organizerId,
+      status: 'PENDING',
+    },
+    include: includeCategory,
+  });
+}
+
+export async function updateEvent(eventId, organizerId, changes) {
+  const event = await findOwnedEvent(eventId, organizerId);
+  checkCanEdit(event);
+
+  if (changes.startsAt !== undefined || changes.endsAt !== undefined) {
+    const newStartsAt = changes.startsAt || event.startsAt;
+    const newEndsAt = changes.endsAt || event.endsAt;
+    checkTimes(newStartsAt, newEndsAt);
+  }
+  if (changes.categoryId !== undefined) {
+    await checkCategory(changes.categoryId);
+  }
+
+  const data = { ...changes };
+  if (event.status === 'REJECTED') {
+    data.status = 'PENDING';
+    data.rejectionReason = null;
+  }
+  return db().event.update({ where: { id: eventId }, data: data, include: includeCategory });
+}
+
+export async function deleteEvent(eventId, organizerId) {
+  const event = await findOwnedEvent(eventId, organizerId);
+
+  if (event.status === 'PENDING' || event.status === 'REJECTED') {
+    await db().event.delete({ where: { id: eventId } });
+    return { result: 'deleted' };
+  }
+  if (event.status === 'APPROVED') {
+    const cancelledEvent = await db().event.update({
+      where: { id: eventId },
+      data: { status: 'CANCELLED' },
+      include: includeCategory,
+    });
+    return { result: 'cancelled', event: cancelledEvent };
+  }
+  throw new AppError(409, 'This event cannot be deleted because it is ' + event.status);
+}
