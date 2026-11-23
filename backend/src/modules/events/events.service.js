@@ -4,7 +4,7 @@ import { ensureNoClash, checkPlaceAndTime } from './clash.service.js';
 
 const includeCategory = { category: { select: { id: true, name: true } } };
 
-function checkTimes(startsAt, endsAt) {
+export function checkTimes(startsAt, endsAt) {
   if (endsAt <= startsAt) {
     throw new AppError(400, 'The end time must be after the start time');
   }
@@ -13,7 +13,7 @@ function checkTimes(startsAt, endsAt) {
   }
 }
 
-async function checkCategory(categoryId) {
+export async function checkCategory(categoryId) {
   const category = await db().category.findUnique({ where: { id: categoryId } });
   if (category === null || !category.isActive) {
     throw new AppError(400, 'This category does not exist or is not active');
