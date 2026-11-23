@@ -349,9 +349,12 @@ frontend/
     │   ├── organizer/
     │   │   ├── MyEvents.jsx     list with poster buttons
     │   │   ├── EventForm.jsx    create / edit, clash check, series preview
+    │   │   ├── SeriesOptions.jsx repeat settings and the preview list
     │   │   └── Alternatives.jsx clickable free slots and places
     │   ├── admin/               Mazen: ReviewQueue.jsx, Categories.jsx
     │   └── student/             Amin: Calendar.jsx, SavedEvents.jsx
+    ├── utils/
+    │   └── cairoDates.js        form values and display always in Cairo time
     └── styles/
         └── style.css
 ```
