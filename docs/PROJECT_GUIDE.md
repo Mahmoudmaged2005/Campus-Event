@@ -239,6 +239,7 @@ campus-events-calendar/
     │   └── migrations/                0001_init, 0002_seed_categories
     │
     ├── tests/                         auth.test.js, events.test.js (one file per finished feature)
+    ├── scripts/                       createUser.js (one-time: make an Organizer or Admin)
     │
     └── src/
         ├── server.js                  runs on the laptop: mounts every module's routes

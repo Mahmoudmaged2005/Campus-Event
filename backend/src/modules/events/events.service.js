@@ -1,9 +1,11 @@
 import { db } from '../../db/client.js';
 import { AppError } from '../../shared/errors.js';
+import { ensureNoClash, checkPlaceAndTime } from './clash.service.js';
+import { deleteImageByUrl } from './imageStorage.js';
 
 const includeCategory = { category: { select: { id: true, name: true } } };
 
-function checkTimes(startsAt, endsAt) {
+export function checkTimes(startsAt, endsAt) {
   if (endsAt <= startsAt) {
     throw new AppError(400, 'The end time must be after the start time');
   }
@@ -12,14 +14,14 @@ function checkTimes(startsAt, endsAt) {
   }
 }
 
-async function checkCategory(categoryId) {
+export async function checkCategory(categoryId) {
   const category = await db().category.findUnique({ where: { id: categoryId } });
   if (category === null || !category.isActive) {
     throw new AppError(400, 'This category does not exist or is not active');
   }
 }
 
-async function findOwnedEvent(eventId, organizerId) {
+export async function findOwnedEvent(eventId, organizerId) {
   const event = await db().event.findUnique({ where: { id: eventId } });
   if (event === null || event.organizerId !== organizerId) {
     throw new AppError(404, 'Event not found');
@@ -27,7 +29,21 @@ async function findOwnedEvent(eventId, organizerId) {
   return event;
 }
 
-function checkCanEdit(event) {
+function mergePlaceAndTime(event, changes) {
+  const merged = { location: event.location, startsAt: event.startsAt, endsAt: event.endsAt };
+  if (changes.location !== undefined) {
+    merged.location = changes.location;
+  }
+  if (changes.startsAt !== undefined) {
+    merged.startsAt = changes.startsAt;
+  }
+  if (changes.endsAt !== undefined) {
+    merged.endsAt = changes.endsAt;
+  }
+  return merged;
+}
+
+export function checkCanEdit(event) {
   if (event.status === 'APPROVED') {
     throw new AppError(409, 'Approved events cannot be edited');
   }
@@ -63,9 +79,15 @@ export async function getEventForUser(eventId, user) {
   return event;
 }
 
+export async function checkAvailability(input) {
+  checkTimes(input.startsAt, input.endsAt);
+  return checkPlaceAndTime(input.location, input.startsAt, input.endsAt, input.ignoreEventId);
+}
+
 export async function createEvent(organizerId, input) {
   checkTimes(input.startsAt, input.endsAt);
   await checkCategory(input.categoryId);
+  await ensureNoClash(input.location, input.startsAt, input.endsAt);
   return db().event.create({
     data: {
       title: input.title,
@@ -86,14 +108,14 @@ export async function updateEvent(eventId, organizerId, changes) {
   const event = await findOwnedEvent(eventId, organizerId);
   checkCanEdit(event);
 
+  const placeAndTime = mergePlaceAndTime(event, changes);
   if (changes.startsAt !== undefined || changes.endsAt !== undefined) {
-    const newStartsAt = changes.startsAt || event.startsAt;
-    const newEndsAt = changes.endsAt || event.endsAt;
-    checkTimes(newStartsAt, newEndsAt);
+    checkTimes(placeAndTime.startsAt, placeAndTime.endsAt);
   }
   if (changes.categoryId !== undefined) {
     await checkCategory(changes.categoryId);
   }
+  await ensureNoClash(placeAndTime.location, placeAndTime.startsAt, placeAndTime.endsAt, eventId);
 
   const data = { ...changes };
   if (event.status === 'REJECTED') {
@@ -108,6 +130,9 @@ export async function deleteEvent(eventId, organizerId) {
 
   if (event.status === 'PENDING' || event.status === 'REJECTED') {
     await db().event.delete({ where: { id: eventId } });
+    if (event.imageUrl) {
+      await deleteImageByUrl(event.imageUrl);
+    }
     return { result: 'deleted' };
   }
   if (event.status === 'APPROVED') {

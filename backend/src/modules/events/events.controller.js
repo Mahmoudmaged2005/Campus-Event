@@ -1,5 +1,7 @@
 import { AppError } from '../../shared/errors.js';
 import * as eventsService from './events.service.js';
+import * as recurrenceService from './recurrence.service.js';
+import * as imageService from './image.service.js';
 
 function readEventId(req) {
   const eventId = Number(req.params.id);
@@ -24,13 +26,38 @@ export async function getOne(req, res) {
   res.json({ event: event });
 }
 
+export async function check(req, res) {
+  const result = await eventsService.checkAvailability(req.body);
+  res.json(result);
+}
+
 export async function create(req, res) {
   const event = await eventsService.createEvent(req.user.id, req.body);
   res.status(201).json({ event: event });
 }
 
+export async function seriesPreview(req, res) {
+  const result = await recurrenceService.previewSeries(req.body);
+  res.json(result);
+}
+
+export async function seriesCreate(req, res) {
+  const result = await recurrenceService.createSeries(req.user.id, req.body);
+  res.status(201).json(result);
+}
+
 export async function update(req, res) {
   const event = await eventsService.updateEvent(readEventId(req), req.user.id, req.body);
+  res.json({ event: event });
+}
+
+export async function uploadPoster(req, res) {
+  const event = await imageService.uploadEventImage(readEventId(req), req.user.id, req.file);
+  res.json({ event: event });
+}
+
+export async function removePoster(req, res) {
+  const event = await imageService.removeEventImage(readEventId(req), req.user.id);
   res.json({ event: event });
 }
 
