@@ -18,7 +18,10 @@ import {
   seriesCreate,
   update,
   remove,
+  uploadPoster,
+  removePoster,
 } from './events.controller.js';
+import { uploadImage } from './upload.js';
 
 export const eventsRouter = Router();
 
@@ -34,3 +37,5 @@ eventsRouter.post('/', organizerOnly, validate(createEventSchema), create);
 eventsRouter.get('/:id', organizerOrAdmin, getOne);
 eventsRouter.patch('/:id', organizerOnly, validate(updateEventSchema), update);
 eventsRouter.delete('/:id', organizerOnly, remove);
+eventsRouter.post('/:id/image', organizerOnly, uploadImage, uploadPoster);
+eventsRouter.delete('/:id/image', organizerOnly, removePoster);

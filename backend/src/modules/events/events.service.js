@@ -1,6 +1,7 @@
 import { db } from '../../db/client.js';
 import { AppError } from '../../shared/errors.js';
 import { ensureNoClash, checkPlaceAndTime } from './clash.service.js';
+import { deleteImageByUrl } from './imageStorage.js';
 
 const includeCategory = { category: { select: { id: true, name: true } } };
 
@@ -20,7 +21,7 @@ export async function checkCategory(categoryId) {
   }
 }
 
-async function findOwnedEvent(eventId, organizerId) {
+export async function findOwnedEvent(eventId, organizerId) {
   const event = await db().event.findUnique({ where: { id: eventId } });
   if (event === null || event.organizerId !== organizerId) {
     throw new AppError(404, 'Event not found');
@@ -42,7 +43,7 @@ function mergePlaceAndTime(event, changes) {
   return merged;
 }
 
-function checkCanEdit(event) {
+export function checkCanEdit(event) {
   if (event.status === 'APPROVED') {
     throw new AppError(409, 'Approved events cannot be edited');
   }
@@ -129,6 +130,9 @@ export async function deleteEvent(eventId, organizerId) {
 
   if (event.status === 'PENDING' || event.status === 'REJECTED') {
     await db().event.delete({ where: { id: eventId } });
+    if (event.imageUrl) {
+      await deleteImageByUrl(event.imageUrl);
+    }
     return { result: 'deleted' };
   }
   if (event.status === 'APPROVED') {
