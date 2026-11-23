@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node src/server.js",
     "generate": "prisma generate",
-    "push": "prisma db push"
+    "push": "prisma db push",
+    "test": "node --test --test-concurrency=1 tests/"
   },
   "dependencies": {
     "@aws-sdk/client-eventbridge": "^3.1175.0",
