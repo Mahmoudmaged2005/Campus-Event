@@ -1,0 +1,192 @@
+generator client {
+  provider               = "prisma-client"
+  output                 = "./generated"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  ORGANIZER
+  ADMIN
+}
+
+enum EventStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum FlagStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+  createdAt    DateTime @default(now())
+
+  sessions           Session[]
+  organizedEvents    Event[]
+  flags              Flag[]
+  registrations      Registration[]
+  savedEvents        SavedEvent[]
+  followedCategories FollowedCategory[]
+  reminders          Reminder[]
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  events    Event[]
+  followers FollowedCategory[]
+}
+
+model Event {
+  id              Int         @id @default(autoincrement())
+  title           String
+  description     String
+  location        String
+  startsAt        DateTime
+  endsAt          DateTime
+  capacity        Int?
+  status          EventStatus @default(PENDING)
+  rejectionReason String?
+  imageUrl        String?
+  seriesId        String?
+  organizerId     Int
+  categoryId      Int
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  organizer     User           @relation(fields: [organizerId], references: [id])
+  category      Category       @relation(fields: [categoryId], references: [id])
+  flags         Flag[]
+  registrations Registration[]
+  savedBy       SavedEvent[]
+  reminders     Reminder[]
+
+  @@index([location, startsAt])
+  @@index([status])
+  @@index([organizerId])
+  @@index([seriesId])
+}
+
+model Flag {
+  id         Int        @id @default(autoincrement())
+  eventId    Int
+  reporterId Int
+  reason     String
+  status     FlagStatus @default(OPEN)
+  createdAt  DateTime   @default(now())
+
+  event    Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  reporter User  @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model Registration {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+}
+
+model SavedEvent {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+}
+
+model FollowedCategory {
+  id         Int      @id @default(autoincrement())
+  categoryId Int
+  userId     Int
+  createdAt  DateTime @default(now())
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, userId])
+}
+
+model Reminder {
+  id        Int       @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  remindAt  DateTime
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([remindAt])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?
+  action     String
+  entityType String
+  entityId   Int?
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+}
