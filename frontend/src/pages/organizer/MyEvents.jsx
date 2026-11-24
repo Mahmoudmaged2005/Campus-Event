@@ -96,6 +96,9 @@ export default function MyEvents() {
           return (
             <EventCard key={event.id} event={event}>
               {event.status === 'APPROVED' ? <CapacityLine eventId={event.id} /> : null}
+              {event.status === 'APPROVED' ? (
+                <Link className="button-secondary" to={'/organizer/events/' + event.id + '/reschedule'}>Reschedule</Link>
+              ) : null}
               {canEdit(event) ? (
                 <>
                   <Link className="button-secondary" to={'/organizer/events/' + event.id + '/edit'}>Edit</Link>

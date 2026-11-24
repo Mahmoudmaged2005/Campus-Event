@@ -53,6 +53,8 @@ export const seriesCreateSchema = eventFields.extend(repeatFields).extend({
   onClash: z.enum(['reject', 'skip'], 'onClash must be reject or skip').default('reject'),
 });
 
+export const rescheduleSchema = eventFields.pick({ startsAt: true, endsAt: true });
+
 export const updateEventSchema = eventFields
   .partial()
   .refine(hasAtLeastOneField, 'Send at least one field to change');

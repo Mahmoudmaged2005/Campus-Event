@@ -26,10 +26,18 @@ export default function Alternatives({ clashes, alternatives, onPickSlot, onPick
         })}
       </div>
 
+      {onPickPlace ? <FreePlaces places={alternatives.places} onPickPlace={onPickPlace} /> : null}
+    </div>
+  );
+}
+
+function FreePlaces({ places, onPickPlace }) {
+  return (
+    <>
       <h4>Free places at the same time</h4>
-      {alternatives.places.length === 0 ? <p>No other known place is free at that time.</p> : null}
+      {places.length === 0 ? <p>No other known place is free at that time.</p> : null}
       <div className="choice-list">
-        {alternatives.places.map(function (place) {
+        {places.map(function (place) {
           return (
             <button type="button" className="button-secondary" key={place} onClick={() => onPickPlace(place)}>
               {place}
@@ -37,6 +45,6 @@ export default function Alternatives({ clashes, alternatives, onPickSlot, onPick
           );
         })}
       </div>
-    </div>
+    </>
   );
 }
