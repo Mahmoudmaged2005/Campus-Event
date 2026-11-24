@@ -2,6 +2,7 @@ import { AppError } from '../../shared/errors.js';
 import * as adminService from './admin.service.js';
 import * as categoriesService from './categories.service.js';
 import * as flagsService from './flags.service.js';
+import * as lifecycleService from './lifecycle.service.js';
 
 function readIdFromUrl(req) {
   const id = Number(req.params.id);
@@ -54,4 +55,9 @@ export async function resolveFlag(req, res) {
 export async function dismissFlag(req, res) {
   const flag = await flagsService.dismissFlag(req.user.id, readIdFromUrl(req));
   res.json({ flag: flag });
+}
+
+export async function runLifecycle(req, res) {
+  const result = await lifecycleService.completePastEvents(req.user.id);
+  res.json(result);
 }

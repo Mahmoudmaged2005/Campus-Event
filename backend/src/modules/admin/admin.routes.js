@@ -12,6 +12,7 @@ import {
   listFlags,
   resolveFlag,
   dismissFlag,
+  runLifecycle,
 } from './admin.controller.js';
 
 export const adminRouter = Router();
@@ -29,3 +30,5 @@ adminRouter.patch('/categories/:id', adminOnly, validate(updateCategorySchema), 
 adminRouter.get('/flags', adminOnly, listFlags);
 adminRouter.post('/flags/:id/resolve', adminOnly, resolveFlag);
 adminRouter.post('/flags/:id/dismiss', adminOnly, dismissFlag);
+
+adminRouter.post('/lifecycle/run', adminOnly, runLifecycle);
