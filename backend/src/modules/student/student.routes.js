@@ -7,6 +7,10 @@ import {
   saveEvent,
   unsaveEvent,
   listMySavedEvents,
+  listCategories,
+  followCategory,
+  unfollowCategory,
+  listFollowedCategories,
 } from './student.controller.js';
 
 export const studentRouter = Router();
@@ -20,3 +24,8 @@ studentRouter.delete('/events/:id/registration', studentOnly, cancelRegistration
 studentRouter.get('/saved', studentOnly, listMySavedEvents);
 studentRouter.post('/events/:id/save', studentOnly, saveEvent);
 studentRouter.delete('/events/:id/save', studentOnly, unsaveEvent);
+
+studentRouter.get('/categories', studentOnly, listCategories);
+studentRouter.get('/followed-categories', studentOnly, listFollowedCategories);
+studentRouter.post('/categories/:id/follow', studentOnly, followCategory);
+studentRouter.delete('/categories/:id/follow', studentOnly, unfollowCategory);
