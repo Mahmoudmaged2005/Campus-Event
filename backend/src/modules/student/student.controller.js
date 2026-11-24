@@ -3,6 +3,9 @@ import * as registrationService from './registration.service.js';
 import * as savedService from './saved.service.js';
 import * as followService from './follow.service.js';
 import * as reportService from './report.service.js';
+import * as remindersService from './reminders.service.js';
+import * as recommendService from './recommend.service.js';
+import * as digestService from './digest.service.js';
 
 function readEventId(req) {
   const eventId = Number(req.params.id);
@@ -18,6 +21,14 @@ function readCategoryId(req) {
     throw new AppError(400, 'The category id must be a positive whole number');
   }
   return categoryId;
+}
+
+function readReminderId(req) {
+  const reminderId = Number(req.params.id);
+  if (!Number.isInteger(reminderId) || reminderId <= 0) {
+    throw new AppError(400, 'The reminder id must be a positive whole number');
+  }
+  return reminderId;
 }
 
 export async function register(req, res) {
@@ -73,4 +84,39 @@ export async function listFollowedCategories(req, res) {
 export async function reportEvent(req, res) {
   const flag = await reportService.reportEvent(readEventId(req), req.user.id, req.body.reason);
   res.status(201).json({ flag: flag });
+}
+
+export async function createReminder(req, res) {
+  const reminder = await remindersService.createReminder(readEventId(req), req.user.id, req.body.minutesBefore);
+  res.status(201).json({ reminder: reminder });
+}
+
+export async function listMyReminders(req, res) {
+  const reminders = await remindersService.listMyReminders(req.user.id);
+  res.json({ reminders: reminders });
+}
+
+export async function deleteReminder(req, res) {
+  const result = await remindersService.deleteReminder(readReminderId(req), req.user.id);
+  res.json(result);
+}
+
+export async function sendDueReminders(req, res) {
+  const result = await remindersService.sendDueReminders();
+  res.json(result);
+}
+
+export async function listRecommendations(req, res) {
+  const recommendations = await recommendService.recommendEvents(req.user.id);
+  res.json({ recommendations: recommendations });
+}
+
+export async function getMyDigest(req, res) {
+  const digest = await digestService.getMyDigest(req.user.id);
+  res.json({ digest: digest });
+}
+
+export async function sendWeeklyDigests(req, res) {
+  const result = await digestService.sendWeeklyDigests();
+  res.json(result);
 }
