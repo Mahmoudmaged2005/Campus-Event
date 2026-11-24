@@ -1,6 +1,7 @@
 import { db } from '../../db/client.js';
 import { AppError } from '../../shared/errors.js';
 import { writeAuditLog } from '../audit/audit.service.js';
+import { getTrustScore } from './trust.service.js';
 
 const includeCategoryAndOrganizer = {
   category: { select: { id: true, name: true } },
@@ -8,11 +9,20 @@ const includeCategoryAndOrganizer = {
 };
 
 export async function listReviewQueue() {
-  return db().event.findMany({
+  const events = await db().event.findMany({
     where: { status: 'PENDING' },
     include: includeCategoryAndOrganizer,
     orderBy: { createdAt: 'asc' },
   });
+
+  const trustByOrganizerId = {};
+  for (const event of events) {
+    if (trustByOrganizerId[event.organizerId] === undefined) {
+      trustByOrganizerId[event.organizerId] = await getTrustScore(event.organizerId);
+    }
+    event.organizerTrust = trustByOrganizerId[event.organizerId];
+  }
+  return events;
 }
 
 async function findPendingEvent(eventId) {
