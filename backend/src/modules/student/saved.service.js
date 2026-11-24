@@ -6,7 +6,7 @@ const includeEventDetails = {
   event: { include: { category: { select: { id: true, name: true } } } },
 };
 
-async function findSavedEvent(eventId, studentId) {
+export async function findSavedEvent(eventId, studentId) {
   return db().savedEvent.findUnique({
     where: { eventId_userId: { eventId: eventId, userId: studentId } },
   });
