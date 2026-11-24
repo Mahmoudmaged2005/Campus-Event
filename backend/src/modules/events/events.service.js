@@ -2,6 +2,7 @@ import { db } from '../../db/client.js';
 import { AppError } from '../../shared/errors.js';
 import { ensureNoClash, checkPlaceAndTime } from './clash.service.js';
 import { deleteImageByUrl } from './imageStorage.js';
+import { publishMessage } from '../../shared/messaging.js';
 
 const includeCategory = { category: { select: { id: true, name: true } } };
 
@@ -141,6 +142,7 @@ export async function deleteEvent(eventId, organizerId) {
       data: { status: 'CANCELLED' },
       include: includeCategory,
     });
+    await publishMessage('event.cancelled', { eventId: eventId, organizerId: organizerId });
     return { result: 'cancelled', event: cancelledEvent };
   }
   throw new AppError(409, 'This event cannot be deleted because it is ' + event.status);
