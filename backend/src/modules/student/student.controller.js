@@ -7,6 +7,8 @@ import * as remindersService from './reminders.service.js';
 import * as recommendService from './recommend.service.js';
 import * as digestService from './digest.service.js';
 import * as weatherService from './weather.service.js';
+import * as browseService from './browse.service.js';
+import { browseEventsSchema } from './student.schema.js';
 
 function readEventId(req) {
   const eventId = Number(req.params.id);
@@ -120,6 +122,20 @@ export async function getMyDigest(req, res) {
 export async function sendWeeklyDigests(req, res) {
   const result = await digestService.sendWeeklyDigests();
   res.json(result);
+}
+
+function readBrowseFilters(req) {
+  const checked = browseEventsSchema.safeParse(req.query);
+  if (!checked.success) {
+    const firstIssue = checked.error.issues[0];
+    throw new AppError(400, firstIssue.path.join('.') + ': ' + firstIssue.message);
+  }
+  return checked.data;
+}
+
+export async function browseEvents(req, res) {
+  const events = await browseService.browseEvents(req.user.id, readBrowseFilters(req));
+  res.json({ events: events });
 }
 
 export async function getEventWeather(req, res) {
