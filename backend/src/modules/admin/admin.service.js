@@ -1,5 +1,6 @@
 import { db } from '../../db/client.js';
 import { AppError } from '../../shared/errors.js';
+import { writeAuditLog } from '../audit/audit.service.js';
 
 const includeCategoryAndOrganizer = {
   category: { select: { id: true, name: true } },
@@ -25,20 +26,31 @@ async function findPendingEvent(eventId) {
   return event;
 }
 
-export async function approveEvent(eventId) {
-  await findPendingEvent(eventId);
-  return db().event.update({
+export async function approveEvent(eventId, adminId) {
+  const event = await findPendingEvent(eventId);
+  const approvedEvent = await db().event.update({
     where: { id: eventId },
     data: { status: 'APPROVED', rejectionReason: null },
     include: includeCategoryAndOrganizer,
   });
+  await writeAuditLog(adminId, 'event.approved', 'Event', eventId, {
+    title: event.title,
+    organizerId: event.organizerId,
+  });
+  return approvedEvent;
 }
 
-export async function rejectEvent(eventId, reason) {
-  await findPendingEvent(eventId);
-  return db().event.update({
+export async function rejectEvent(eventId, adminId, reason) {
+  const event = await findPendingEvent(eventId);
+  const rejectedEvent = await db().event.update({
     where: { id: eventId },
     data: { status: 'REJECTED', rejectionReason: reason },
     include: includeCategoryAndOrganizer,
   });
+  await writeAuditLog(adminId, 'event.rejected', 'Event', eventId, {
+    title: event.title,
+    organizerId: event.organizerId,
+    reason: reason,
+  });
+  return rejectedEvent;
 }

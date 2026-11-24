@@ -15,11 +15,11 @@ export async function reviewQueue(req, res) {
 }
 
 export async function approve(req, res) {
-  const event = await adminService.approveEvent(readEventId(req));
+  const event = await adminService.approveEvent(readEventId(req), req.user.id);
   res.json({ event: event });
 }
 
 export async function reject(req, res) {
-  const event = await adminService.rejectEvent(readEventId(req), req.body.reason);
+  const event = await adminService.rejectEvent(readEventId(req), req.user.id, req.body.reason);
   res.json({ event: event });
 }
