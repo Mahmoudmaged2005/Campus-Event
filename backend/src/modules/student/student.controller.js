@@ -2,6 +2,7 @@ import { AppError } from '../../shared/errors.js';
 import * as registrationService from './registration.service.js';
 import * as savedService from './saved.service.js';
 import * as followService from './follow.service.js';
+import * as reportService from './report.service.js';
 
 function readEventId(req) {
   const eventId = Number(req.params.id);
@@ -67,4 +68,9 @@ export async function unfollowCategory(req, res) {
 export async function listFollowedCategories(req, res) {
   const categories = await followService.listFollowedCategories(req.user.id);
   res.json({ categories: categories });
+}
+
+export async function reportEvent(req, res) {
+  const flag = await reportService.reportEvent(readEventId(req), req.user.id, req.body.reason);
+  res.status(201).json({ flag: flag });
 }
