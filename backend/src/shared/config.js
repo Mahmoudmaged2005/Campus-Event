@@ -32,4 +32,6 @@ export const config = {
   s3Endpoint: s3Endpoint,
   s3Bucket: s3Bucket,
   s3PublicUrl: readS3PublicUrl(s3Endpoint, s3Bucket, awsRegion),
+  snsEndpoint: process.env.SNS_ENDPOINT || '',
+  snsTopicArn: process.env.SNS_TOPIC_ARN || '',
 };
