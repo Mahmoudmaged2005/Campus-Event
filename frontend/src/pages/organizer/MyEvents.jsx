@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { apiRequest } from '../../api/api.js';
 import EventCard from '../../components/EventCard.jsx';
 import Message from '../../components/Message.jsx';
+import CapacityLine from './CapacityLine.jsx';
 
 const MAX_POSTER_BYTES = 2 * 1024 * 1024;
 
@@ -94,6 +95,7 @@ export default function MyEvents() {
         {events.map(function (event) {
           return (
             <EventCard key={event.id} event={event}>
+              {event.status === 'APPROVED' ? <CapacityLine eventId={event.id} /> : null}
               {canEdit(event) ? (
                 <>
                   <Link className="button-secondary" to={'/organizer/events/' + event.id + '/edit'}>Edit</Link>
