@@ -1,5 +1,6 @@
 import { db } from '../../db/client.js';
 import { AppError } from '../../shared/errors.js';
+import { writeAuditLog } from '../audit/audit.service.js';
 
 const includeEventDetails = {
   event: { include: { category: { select: { id: true, name: true } } } },
@@ -69,7 +70,9 @@ export async function registerForEvent(eventId, studentId) {
     throw new AppError(409, 'You are already registered for this event');
   }
   await checkCapacity(event);
-  return createRegistration(eventId, studentId);
+  const registration = await createRegistration(eventId, studentId);
+  await writeAuditLog(studentId, 'registration.created', 'Event', eventId, null);
+  return registration;
 }
 
 export async function cancelRegistration(eventId, studentId) {
@@ -82,6 +85,7 @@ export async function cancelRegistration(eventId, studentId) {
     throw new AppError(409, 'This event has already started, you cannot cancel now');
   }
   await db().registration.delete({ where: { id: existing.id } });
+  await writeAuditLog(studentId, 'registration.cancelled', 'Event', eventId, null);
   return { result: 'cancelled' };
 }
 

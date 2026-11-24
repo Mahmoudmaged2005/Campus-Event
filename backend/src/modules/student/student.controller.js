@@ -1,5 +1,5 @@
 import { AppError } from '../../shared/errors.js';
-import * as studentService from './student.service.js';
+import * as registrationService from './registration.service.js';
 
 function readEventId(req) {
   const eventId = Number(req.params.id);
@@ -10,16 +10,16 @@ function readEventId(req) {
 }
 
 export async function register(req, res) {
-  const registration = await studentService.registerForEvent(readEventId(req), req.user.id);
+  const registration = await registrationService.registerForEvent(readEventId(req), req.user.id);
   res.status(201).json({ registration: registration });
 }
 
 export async function cancelRegistration(req, res) {
-  const result = await studentService.cancelRegistration(readEventId(req), req.user.id);
+  const result = await registrationService.cancelRegistration(readEventId(req), req.user.id);
   res.json(result);
 }
 
 export async function listMyRegistrations(req, res) {
-  const registrations = await studentService.listMyRegistrations(req.user.id);
+  const registrations = await registrationService.listMyRegistrations(req.user.id);
   res.json({ registrations: registrations });
 }
