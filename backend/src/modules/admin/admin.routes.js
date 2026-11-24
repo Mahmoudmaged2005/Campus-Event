@@ -9,6 +9,9 @@ import {
   listCategories,
   createCategory,
   updateCategory,
+  listFlags,
+  resolveFlag,
+  dismissFlag,
 } from './admin.controller.js';
 
 export const adminRouter = Router();
@@ -22,3 +25,7 @@ adminRouter.post('/events/:id/reject', adminOnly, validate(rejectEventSchema), r
 adminRouter.get('/categories', adminOnly, listCategories);
 adminRouter.post('/categories', adminOnly, validate(createCategorySchema), createCategory);
 adminRouter.patch('/categories/:id', adminOnly, validate(updateCategorySchema), updateCategory);
+
+adminRouter.get('/flags', adminOnly, listFlags);
+adminRouter.post('/flags/:id/resolve', adminOnly, resolveFlag);
+adminRouter.post('/flags/:id/dismiss', adminOnly, dismissFlag);
