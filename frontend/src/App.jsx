@@ -6,6 +6,9 @@ import Message from './components/Message.jsx';
 import Login from './pages/Login.jsx';
 import MyEvents from './pages/organizer/MyEvents.jsx';
 import EventForm from './pages/organizer/EventForm.jsx';
+import ReviewQueue from './pages/admin/ReviewQueue.jsx';
+import Flags from './pages/admin/Flags.jsx';
+import Categories from './pages/admin/Categories.jsx';
 
 function Home() {
   const { user, checking } = useAuth();
@@ -17,6 +20,9 @@ function Home() {
   }
   if (user.role === 'ORGANIZER') {
     return <Navigate to="/organizer" replace />;
+  }
+  if (user.role === 'ADMIN') {
+    return <Navigate to="/admin" replace />;
   }
   return <Message type="info" text={'The ' + user.role.toLowerCase() + ' pages are not ready yet.'} />;
 }
@@ -39,6 +45,18 @@ export default function App() {
           <Route
             path="/organizer/events/:id/edit"
             element={<RequireRole roles={['ORGANIZER']}><EventForm /></RequireRole>}
+          />
+          <Route
+            path="/admin"
+            element={<RequireRole roles={['ADMIN']}><ReviewQueue /></RequireRole>}
+          />
+          <Route
+            path="/admin/flags"
+            element={<RequireRole roles={['ADMIN']}><Flags /></RequireRole>}
+          />
+          <Route
+            path="/admin/categories"
+            element={<RequireRole roles={['ADMIN']}><Categories /></RequireRole>}
           />
           <Route path="*" element={<Home />} />
         </Routes>
