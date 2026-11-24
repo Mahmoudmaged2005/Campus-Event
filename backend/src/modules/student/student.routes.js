@@ -22,12 +22,15 @@ import {
   getMyDigest,
   sendWeeklyDigests,
   getEventWeather,
+  browseEvents,
 } from './student.controller.js';
 
 export const studentRouter = Router();
 
 const studentOnly = [requireAuth, requireRole('STUDENT')];
 const adminOnly = [requireAuth, requireRole('ADMIN')];
+
+studentRouter.get('/events', studentOnly, browseEvents);
 
 studentRouter.get('/registrations', studentOnly, listMyRegistrations);
 studentRouter.post('/events/:id/registration', studentOnly, register);
