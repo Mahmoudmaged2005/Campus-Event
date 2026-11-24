@@ -21,6 +21,7 @@ import {
   listRecommendations,
   getMyDigest,
   sendWeeklyDigests,
+  getEventWeather,
 } from './student.controller.js';
 
 export const studentRouter = Router();
@@ -51,3 +52,5 @@ studentRouter.post('/reminders/send-due', adminOnly, sendDueReminders);
 studentRouter.get('/recommendations', studentOnly, listRecommendations);
 studentRouter.get('/digest', studentOnly, getMyDigest);
 studentRouter.post('/digest/send', adminOnly, sendWeeklyDigests);
+
+studentRouter.get('/events/:id/weather', studentOnly, getEventWeather);

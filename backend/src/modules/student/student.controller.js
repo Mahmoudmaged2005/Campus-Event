@@ -6,6 +6,7 @@ import * as reportService from './report.service.js';
 import * as remindersService from './reminders.service.js';
 import * as recommendService from './recommend.service.js';
 import * as digestService from './digest.service.js';
+import * as weatherService from './weather.service.js';
 
 function readEventId(req) {
   const eventId = Number(req.params.id);
@@ -118,5 +119,10 @@ export async function getMyDigest(req, res) {
 
 export async function sendWeeklyDigests(req, res) {
   const result = await digestService.sendWeeklyDigests();
+  res.json(result);
+}
+
+export async function getEventWeather(req, res) {
+  const result = await weatherService.getEventWeather(readEventId(req));
   res.json(result);
 }

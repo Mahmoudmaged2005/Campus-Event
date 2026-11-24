@@ -4,6 +4,7 @@ import { cairoParts, cairoDateText } from '../../shared/cairoTime.js';
 import { createNotification } from '../notifications/notifications.service.js';
 import { findOpenEvent, findRegistration } from './registration.service.js';
 import { findSavedEvent } from './saved.service.js';
+import { getWeatherForDate, weatherShortText } from './weather.service.js';
 
 const ONE_MINUTE = 60 * 1000;
 
@@ -67,12 +68,25 @@ function twoDigits(number) {
   return String(number).padStart(2, '0');
 }
 
-function reminderMessage(event) {
+async function weatherLine(event) {
+  try {
+    const weather = await getWeatherForDate(event.startsAt);
+    if (weather.available) {
+      return '. Weather: ' + weatherShortText(weather);
+    }
+    return '';
+  } catch (error) {
+    return '';
+  }
+}
+
+async function reminderMessage(event) {
   const parts = cairoParts(event.startsAt);
   const clockText = twoDigits(parts.hour) + ':' + twoDigits(parts.minute);
+  const weatherText = await weatherLine(event);
   return (
     'Reminder: "' + event.title + '" starts on ' + cairoDateText(event.startsAt) +
-    ' at ' + clockText + ' (Cairo time) in ' + event.location
+    ' at ' + clockText + ' (Cairo time) in ' + event.location + weatherText
   );
 }
 
@@ -87,7 +101,8 @@ async function sendOneReminder(reminder, now) {
   if (reminder.event.status !== 'APPROVED' || reminder.event.startsAt <= now) {
     return false;
   }
-  await createNotification(reminder.userId, reminderMessage(reminder.event));
+  const message = await reminderMessage(reminder.event);
+  await createNotification(reminder.userId, message);
   return true;
 }
 
