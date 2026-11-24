@@ -1,5 +1,6 @@
 import { AppError } from '../../shared/errors.js';
 import * as registrationService from './registration.service.js';
+import * as savedService from './saved.service.js';
 
 function readEventId(req) {
   const eventId = Number(req.params.id);
@@ -22,4 +23,19 @@ export async function cancelRegistration(req, res) {
 export async function listMyRegistrations(req, res) {
   const registrations = await registrationService.listMyRegistrations(req.user.id);
   res.json({ registrations: registrations });
+}
+
+export async function saveEvent(req, res) {
+  const savedEvent = await savedService.saveEvent(readEventId(req), req.user.id);
+  res.status(201).json({ savedEvent: savedEvent });
+}
+
+export async function unsaveEvent(req, res) {
+  const result = await savedService.unsaveEvent(readEventId(req), req.user.id);
+  res.json(result);
+}
+
+export async function listMySavedEvents(req, res) {
+  const savedEvents = await savedService.listMySavedEvents(req.user.id);
+  res.json({ savedEvents: savedEvents });
 }

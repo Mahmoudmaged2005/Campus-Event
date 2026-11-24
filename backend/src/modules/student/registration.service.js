@@ -12,7 +12,7 @@ async function findRegistration(eventId, studentId) {
   });
 }
 
-async function findOpenEvent(eventId) {
+export async function findOpenEvent(eventId) {
   const event = await db().event.findUnique({ where: { id: eventId } });
   if (event === null || event.status !== 'APPROVED') {
     throw new AppError(404, 'Event not found');
