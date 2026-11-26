@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './shared/config.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
+import { requestLogger } from './shared/middleware/requestLogger.js';
 
 function sendHealth(req, res) {
   res.json({ status: 'ok' });
@@ -18,6 +19,7 @@ export function makeApp(moduleRoutes) {
   app.set('trust proxy', 1);
   app.use(helmet());
   app.use(cors({ origin: config.corsOrigins }));
+  app.use(requestLogger);
   app.use(express.json({ limit: '50kb' }));
 
   app.get('/api/health', sendHealth);
