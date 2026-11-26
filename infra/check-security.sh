@@ -105,6 +105,8 @@ echo
 echo "5. Browser origin (CORS)"
 ALLOWED=$(curl -s -m 60 -D - -o /dev/null -H "Origin: https://evil.example" "$API/health" | tr -d '\r' | grep -i '^access-control-allow-origin:')
 check "A strange website is not allowed" "$(echo "$ALLOWED" | grep -qi 'evil.example' && echo no || echo yes)"
+OUR_SITE=$(curl -s -m 60 -D - -o /dev/null -H "Origin: http://localhost:5173" "$API/health" | tr -d '\r' | grep -i '^access-control-allow-origin:')
+check "Our website is allowed, and only by its exact address (no *)" "$(echo "$OUR_SITE" | grep -qi 'http://localhost:5173' && echo yes || echo no)"
 
 echo
 echo "6. Cloud settings"

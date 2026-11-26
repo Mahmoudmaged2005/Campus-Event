@@ -1,8 +1,7 @@
+const DEFAULT_WEBSITE = 'http://localhost:5173';
+
 function readCorsOrigins() {
-  const corsOriginsText = process.env.CORS_ORIGINS || '*';
-  if (corsOriginsText === '*') {
-    return '*';
-  }
+  const corsOriginsText = process.env.CORS_ORIGINS || DEFAULT_WEBSITE;
   const origins = [];
   const parts = corsOriginsText.split(',');
   for (const part of parts) {

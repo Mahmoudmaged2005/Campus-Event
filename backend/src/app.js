@@ -19,7 +19,11 @@ export function makeApp(moduleRoutes) {
 
   app.set('trust proxy', 1);
   app.use(helmet());
-  app.use(cors({ origin: config.corsOrigins }));
+  app.use(cors({
+    origin: config.corsOrigins,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Authorization', 'Content-Type'],
+  }));
   app.use(requestLogger);
   app.use(apiRateLimit);
   app.use(express.json({ limit: '50kb' }));
