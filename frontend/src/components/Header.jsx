@@ -17,6 +17,7 @@ export default function Header() {
         <nav className="header-links">
           <Link to="/organizer">My events</Link>
           <Link to="/organizer/events/new">New event</Link>
+          <Link to="/organizer/notifications">Notifications</Link>
         </nav>
       ) : null}
       {user ? (

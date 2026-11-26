@@ -7,6 +7,7 @@ import Login from './pages/Login.jsx';
 import MyEvents from './pages/organizer/MyEvents.jsx';
 import EventForm from './pages/organizer/EventForm.jsx';
 import RescheduleEvent from './pages/organizer/RescheduleEvent.jsx';
+import OrganizerNotifications from './pages/organizer/OrganizerNotifications.jsx';
 import ReviewQueue from './pages/admin/ReviewQueue.jsx';
 import Flags from './pages/admin/Flags.jsx';
 import Categories from './pages/admin/Categories.jsx';
@@ -56,6 +57,10 @@ export default function App() {
           <Route
             path="/organizer/events/:id/reschedule"
             element={<RequireRole roles={['ORGANIZER']}><RescheduleEvent /></RequireRole>}
+          />
+          <Route
+            path="/organizer/notifications"
+            element={<RequireRole roles={['ORGANIZER']}><OrganizerNotifications /></RequireRole>}
           />
           <Route
             path="/admin"
