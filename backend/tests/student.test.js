@@ -8,7 +8,7 @@ import { notificationsRouter } from '../src/modules/notifications/notifications.
 import { hashPassword } from '../src/modules/auth/password.js';
 import { countRegistrations, listRegisteredStudentIds } from '../src/modules/student/registration.service.js';
 import { createNotification } from '../src/modules/notifications/notifications.service.js';
-import { remindersHandler } from '../src/modules/student/lambda.js';
+import { remindersHandler, studentQueueHandler } from '../src/modules/student/lambda.js';
 import { db } from '../src/db/client.js';
 
 if (!process.env.TEST_DATABASE_URL) {
@@ -118,6 +118,11 @@ after(async function () {
     return testUser.id;
   });
   await db().auditLog.deleteMany({ where: { actorId: { in: userIds } } });
+  const testEvents = await db().event.findMany({ where: { organizerId: { in: userIds } }, select: { id: true } });
+  const eventIds = listIds(testEvents, function (testEvent) {
+    return testEvent.id;
+  });
+  await db().auditLog.deleteMany({ where: { action: 'students.notified', entityId: { in: eventIds } } });
   await db().event.deleteMany({ where: { organizerId: { in: userIds } } });
   await db().user.deleteMany({ where: { id: { in: userIds } } });
   await db().category.deleteMany({ where: { name: { endsWith: CATEGORY_ENDING } } });
@@ -405,4 +410,57 @@ test('weather says not available too far ahead and refuses pending events', asyn
   const pending = await makeEvent('Pending weather', 'PENDING', fromNow(3 * ONE_DAY), null);
   const pendingAnswer = await callApi('GET', '/api/student/events/' + pending.id + '/weather', undefined, users.student);
   assert.equal(pendingAnswer.status, 404);
+});
+
+function queueEventFor(type, eventId) {
+  const body = JSON.stringify({ type: type, data: { eventId: eventId, organizerId: users.organizer.id } });
+  return { Records: [{ body: body }] };
+}
+
+test('queue: a cancelled event notifies its registered students and removes reminders', async function () {
+  const registeredStudent = await makeUser('cancel-student', 'STUDENT');
+  const event = await makeEvent('Will be cancelled', 'APPROVED', fromNow(5 * ONE_DAY), null);
+  await callApi('POST', '/api/student/events/' + event.id + '/registration', undefined, registeredStudent);
+  await callApi('POST', '/api/student/events/' + event.id + '/reminders', { minutesBefore: 60 }, registeredStudent);
+  await db().event.update({ where: { id: event.id }, data: { status: 'CANCELLED' } });
+
+  const result = await studentQueueHandler(queueEventFor('event.cancelled', event.id));
+  assert.equal(result.messageCount, 1);
+  assert.equal(result.notifiedCount, 1);
+
+  const notifications = await db().notification.findMany({ where: { userId: registeredStudent.id } });
+  assert.equal(notifications.length, 1);
+  assert.ok(notifications[0].message.startsWith('"Will be cancelled" on '));
+  assert.ok(notifications[0].message.endsWith('was cancelled.'));
+  assert.equal(await db().reminder.count({ where: { eventId: event.id } }), 0);
+});
+
+test('queue: a rescheduled event tells registered students and reminder owners the new time', async function () {
+  const registeredStudent = await makeUser('moved-registered', 'STUDENT');
+  const savedStudent = await makeUser('moved-saved', 'STUDENT');
+  const event = await makeEvent('Will be moved', 'APPROVED', fromNow(5 * ONE_DAY), null);
+  await callApi('POST', '/api/student/events/' + event.id + '/registration', undefined, registeredStudent);
+  await callApi('POST', '/api/student/events/' + event.id + '/save', undefined, savedStudent);
+  await callApi('POST', '/api/student/events/' + event.id + '/reminders', { minutesBefore: 60 }, savedStudent);
+  await db().event.update({ where: { id: event.id }, data: { startsAt: fromNow(6 * ONE_DAY), endsAt: fromNow(6 * ONE_DAY + 60 * ONE_MINUTE) } });
+
+  const result = await studentQueueHandler(queueEventFor('event.rescheduled', event.id));
+  assert.equal(result.notifiedCount, 2);
+
+  const registeredMessages = await db().notification.findMany({ where: { userId: registeredStudent.id } });
+  assert.equal(registeredMessages.length, 1);
+  assert.ok(registeredMessages[0].message.includes('was moved to'));
+  assert.equal(registeredMessages[0].message.includes('reminder'), false);
+
+  const savedMessages = await db().notification.findMany({ where: { userId: savedStudent.id } });
+  assert.equal(savedMessages.length, 1);
+  assert.ok(savedMessages[0].message.includes('Your reminder was removed'));
+  assert.equal(await db().reminder.count({ where: { eventId: event.id } }), 0);
+});
+
+test('queue: unknown message types and missing events are ignored', async function () {
+  const unknown = await studentQueueHandler(queueEventFor('event.approved', 999999999));
+  assert.equal(unknown.notifiedCount, 0);
+  const missing = await studentQueueHandler(queueEventFor('event.cancelled', 999999999));
+  assert.equal(missing.notifiedCount, 0);
 });
