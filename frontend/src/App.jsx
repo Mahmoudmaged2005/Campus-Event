@@ -6,9 +6,14 @@ import Message from './components/Message.jsx';
 import Login from './pages/Login.jsx';
 import MyEvents from './pages/organizer/MyEvents.jsx';
 import EventForm from './pages/organizer/EventForm.jsx';
+import RescheduleEvent from './pages/organizer/RescheduleEvent.jsx';
+import OrganizerNotifications from './pages/organizer/OrganizerNotifications.jsx';
 import ReviewQueue from './pages/admin/ReviewQueue.jsx';
 import Flags from './pages/admin/Flags.jsx';
 import Categories from './pages/admin/Categories.jsx';
+import Calendar from './pages/student/Calendar.jsx';
+import SavedEvents from './pages/student/SavedEvents.jsx';
+import Notifications from './pages/student/Notifications.jsx';
 
 function Home() {
   const { user, checking } = useAuth();
@@ -23,6 +28,9 @@ function Home() {
   }
   if (user.role === 'ADMIN') {
     return <Navigate to="/admin" replace />;
+  }
+  if (user.role === 'STUDENT') {
+    return <Navigate to="/student" replace />;
   }
   return <Message type="info" text={'The ' + user.role.toLowerCase() + ' pages are not ready yet.'} />;
 }
@@ -47,6 +55,14 @@ export default function App() {
             element={<RequireRole roles={['ORGANIZER']}><EventForm /></RequireRole>}
           />
           <Route
+            path="/organizer/events/:id/reschedule"
+            element={<RequireRole roles={['ORGANIZER']}><RescheduleEvent /></RequireRole>}
+          />
+          <Route
+            path="/organizer/notifications"
+            element={<RequireRole roles={['ORGANIZER']}><OrganizerNotifications /></RequireRole>}
+          />
+          <Route
             path="/admin"
             element={<RequireRole roles={['ADMIN']}><ReviewQueue /></RequireRole>}
           />
@@ -57,6 +73,18 @@ export default function App() {
           <Route
             path="/admin/categories"
             element={<RequireRole roles={['ADMIN']}><Categories /></RequireRole>}
+          />
+          <Route
+            path="/student"
+            element={<RequireRole roles={['STUDENT']}><Calendar /></RequireRole>}
+          />
+          <Route
+            path="/student/saved"
+            element={<RequireRole roles={['STUDENT']}><SavedEvents /></RequireRole>}
+          />
+          <Route
+            path="/student/notifications"
+            element={<RequireRole roles={['STUDENT']}><Notifications /></RequireRole>}
           />
           <Route path="*" element={<Home />} />
         </Routes>
