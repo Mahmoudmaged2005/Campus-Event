@@ -3,28 +3,18 @@ set -e
 
 INFRA_FOLDER="$(cd "$(dirname "$0")" && pwd)"
 DIST_FOLDER="$INFRA_FOLDER/../backend/dist"
-ENV_FILE="$INFRA_FOLDER/../backend/.env"
 REGION="${AWS_DEFAULT_REGION:-eu-central-1}"
 ROLE_ARN_START="arn:aws:iam::000000000000:role"
 FLOCI_INSIDE_DOCKER="http://campus-events-floci:4566"
 BUCKET="${S3_BUCKET:-campus-events-images}"
-
-read_env_value() {
-  grep "^$1=" "$ENV_FILE" | head -1 | sed "s/^$1=//; s/^\"//; s/\"$//"
-}
-
-DATABASE_URL=$(read_env_value DATABASE_URL)
-if [ -z "$DATABASE_URL" ]; then
-  echo "DATABASE_URL is missing in backend/.env"
-  exit 1
-fi
 
 cd "$DIST_FOLDER"
 SETTINGS_FILE="lambda-settings.json"
 cat > "$SETTINGS_FILE" <<EOF
 {
   "Variables": {
-    "DATABASE_URL": "$DATABASE_URL",
+    "DATABASE_SECRET_NAME": "campus-events/database-url",
+    "SECRETS_ENDPOINT": "$FLOCI_INSIDE_DOCKER",
     "CORS_ORIGINS": "http://localhost:5173",
     "S3_ENDPOINT": "$FLOCI_INSIDE_DOCKER",
     "S3_BUCKET": "$BUCKET",

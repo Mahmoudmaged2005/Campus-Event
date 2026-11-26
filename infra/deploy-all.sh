@@ -18,7 +18,9 @@ echo "== S3 bucket for posters"
 bash infra/s3-setup.sh
 echo "== SNS topic and SQS queues"
 bash infra/messaging-setup.sh
-echo "== IAM role for the Lambdas"
+echo "== Database address in Secrets Manager"
+bash infra/secrets-setup.sh
+echo "== IAM roles for the Lambdas"
 bash infra/iam-setup.sh
 echo "== Building the Lambda zip files"
 bash infra/build-lambdas.sh

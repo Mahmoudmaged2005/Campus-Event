@@ -28,6 +28,13 @@ SAVE_POSTERS="{
   \"Resource\": \"arn:aws:s3:::$BUCKET/events/*\"
 }"
 
+READ_DATABASE_SECRET="{
+  \"Sid\": \"ReadDatabaseSecret\",
+  \"Effect\": \"Allow\",
+  \"Action\": \"secretsmanager:GetSecretValue\",
+  \"Resource\": \"arn:aws:secretsmanager:$REGION:$ACCOUNT:secret:campus-events/database-url-*\"
+}"
+
 write_logs() {
   FUNCTION_NAME="$1"
   echo "{
@@ -53,7 +60,7 @@ create_role_for_function() {
   EXTRA_STATEMENTS="$2"
   ROLE_NAME="$FUNCTION_NAME-role"
 
-  STATEMENTS="$(write_logs "$FUNCTION_NAME")"
+  STATEMENTS="$(write_logs "$FUNCTION_NAME"), $READ_DATABASE_SECRET"
   if [ -n "$EXTRA_STATEMENTS" ]; then
     STATEMENTS="$STATEMENTS, $EXTRA_STATEMENTS"
   fi
