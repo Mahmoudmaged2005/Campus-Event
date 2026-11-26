@@ -6,7 +6,14 @@ services:
       - "4566:4566"
     volumes:
       - floci-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      FLOCI_SERVICES_LAMBDA_DOCKER_NETWORK: campus-events-net
     restart: unless-stopped
 
 volumes:
   floci-data:
+
+networks:
+  default:
+    name: campus-events-net

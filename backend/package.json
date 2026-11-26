@@ -8,7 +8,8 @@
     "generate": "prisma generate",
     "push": "prisma db push",
     "test": "node --test --test-concurrency=1 tests/",
-    "create-user": "node scripts/createUser.js"
+    "create-user": "node scripts/createUser.js",
+    "build:lambdas": "node scripts/buildLambdas.js"
   },
   "dependencies": {
     "@aws-sdk/client-eventbridge": "^3.1175.0",
