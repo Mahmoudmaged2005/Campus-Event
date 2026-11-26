@@ -1,6 +1,8 @@
 import { db } from '../../db/client.js';
 import { AppError } from '../../shared/errors.js';
 import { writeAuditLog } from '../audit/audit.service.js';
+import { sendEmail } from '../../shared/email.js';
+import { cairoDateText, cairoClockText } from '../../shared/cairoTime.js';
 
 const includeEventDetails = {
   event: { include: { category: { select: { id: true, name: true } } } },
@@ -63,6 +65,18 @@ export async function listRegisteredStudentIds(eventId) {
   return studentIds;
 }
 
+async function emailRegistration(event, studentId) {
+  const student = await db().user.findUnique({ where: { id: studentId }, select: { name: true, email: true } });
+  const when = cairoDateText(event.startsAt) + ' at ' + cairoClockText(event.startsAt) + ' (Cairo time)';
+  const text =
+    'Hi ' + student.name + ',\n\n' +
+    'You are registered for "' + event.title + '".\n' +
+    'When: ' + when + '\n' +
+    'Where: ' + event.location + '\n\n' +
+    'Campus Events';
+  await sendEmail(student.email, 'You are registered for ' + event.title, text);
+}
+
 export async function registerForEvent(eventId, studentId) {
   const event = await findOpenEvent(eventId);
   const existing = await findRegistration(eventId, studentId);
@@ -72,6 +86,7 @@ export async function registerForEvent(eventId, studentId) {
   await checkCapacity(event);
   const registration = await createRegistration(eventId, studentId);
   await writeAuditLog(studentId, 'registration.created', 'Event', eventId, null);
+  await emailRegistration(event, studentId);
   return registration;
 }
 

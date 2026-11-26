@@ -38,6 +38,11 @@ export function cairoDateText(date) {
   return cairoDateFormat.format(date);
 }
 
+export function cairoClockText(date) {
+  const parts = cairoParts(date);
+  return String(parts.hour).padStart(2, '0') + ':' + String(parts.minute).padStart(2, '0');
+}
+
 function cairoOffsetMinutes(date) {
   const parts = cairoParts(date);
   const sameClockInUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute);
