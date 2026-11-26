@@ -7,11 +7,15 @@ import {
   checkPlaceSchema,
   seriesPreviewSchema,
   seriesCreateSchema,
+  rescheduleSchema,
 } from './events.schema.js';
 import {
   listCategories,
   listMine,
   getOne,
+  capacity,
+  reschedulePreview,
+  reschedule,
   check,
   create,
   seriesPreview,
@@ -35,6 +39,9 @@ eventsRouter.post('/series/preview', organizerOnly, validate(seriesPreviewSchema
 eventsRouter.post('/series', organizerOnly, validate(seriesCreateSchema), seriesCreate);
 eventsRouter.post('/', organizerOnly, validate(createEventSchema), create);
 eventsRouter.get('/:id', organizerOrAdmin, getOne);
+eventsRouter.get('/:id/capacity', organizerOrAdmin, capacity);
+eventsRouter.post('/:id/reschedule/preview', organizerOnly, validate(rescheduleSchema), reschedulePreview);
+eventsRouter.post('/:id/reschedule', organizerOnly, validate(rescheduleSchema), reschedule);
 eventsRouter.patch('/:id', organizerOnly, validate(updateEventSchema), update);
 eventsRouter.delete('/:id', organizerOnly, remove);
 eventsRouter.post('/:id/image', organizerOnly, uploadImage, uploadPoster);
