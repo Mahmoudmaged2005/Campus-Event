@@ -5,7 +5,7 @@ INFRA_FOLDER="$(cd "$(dirname "$0")" && pwd)"
 DIST_FOLDER="$INFRA_FOLDER/../backend/dist"
 ENV_FILE="$INFRA_FOLDER/../backend/.env"
 REGION="${AWS_DEFAULT_REGION:-eu-central-1}"
-ROLE_ARN="arn:aws:iam::000000000000:role/campus-events-lambda-role"
+ROLE_ARN_START="arn:aws:iam::000000000000:role"
 FLOCI_INSIDE_DOCKER="http://campus-events-floci:4566"
 BUCKET="${S3_BUCKET:-campus-events-images}"
 
@@ -40,13 +40,14 @@ create_or_update_function() {
   ZIP_NAME="$2"
   HANDLER="$3"
   ZIP_FILE="$ZIP_NAME.zip"
+  ROLE_ARN="$ROLE_ARN_START/$FUNCTION_NAME-role"
 
   if aws lambda get-function --function-name "$FUNCTION_NAME" >/dev/null 2>&1; then
     echo "Updating $FUNCTION_NAME"
     aws lambda update-function-code --function-name "$FUNCTION_NAME" --zip-file "fileb://$ZIP_FILE" >/dev/null
     aws lambda wait function-updated --function-name "$FUNCTION_NAME"
     aws lambda update-function-configuration --function-name "$FUNCTION_NAME" \
-      --handler "$HANDLER" --environment "file://$SETTINGS_FILE" >/dev/null
+      --role "$ROLE_ARN" --handler "$HANDLER" --environment "file://$SETTINGS_FILE" >/dev/null
   else
     echo "Creating $FUNCTION_NAME"
     aws lambda create-function --function-name "$FUNCTION_NAME" \
