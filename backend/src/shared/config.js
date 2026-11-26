@@ -34,6 +34,4 @@ export const config = {
   s3PublicUrl: readS3PublicUrl(s3Endpoint, s3Bucket, awsRegion),
   snsEndpoint: process.env.SNS_ENDPOINT || '',
   snsTopicArn: process.env.SNS_TOPIC_ARN || '',
-  emailUser: process.env.EMAIL_USER || '',
-  emailAppPassword: process.env.EMAIL_APP_PASSWORD || '',
 };

@@ -35,6 +35,13 @@ READ_DATABASE_SECRET="{
   \"Resource\": \"arn:aws:secretsmanager:$REGION:$ACCOUNT:secret:campus-events/database-url-*\"
 }"
 
+READ_EMAIL_SECRET="{
+  \"Sid\": \"ReadEmailSecret\",
+  \"Effect\": \"Allow\",
+  \"Action\": \"secretsmanager:GetSecretValue\",
+  \"Resource\": \"arn:aws:secretsmanager:$REGION:$ACCOUNT:secret:campus-events/email-app-password-*\"
+}"
+
 write_logs() {
   FUNCTION_NAME="$1"
   echo "{
@@ -74,15 +81,15 @@ create_role_for_function() {
     --policy-document "$POLICY"
 }
 
-create_role_for_function campus-auth ""
+create_role_for_function campus-auth "$READ_EMAIL_SECRET"
 create_role_for_function campus-events "$SEND_MESSAGES, $SAVE_POSTERS"
 create_role_for_function campus-admin "$SEND_MESSAGES"
 create_role_for_function campus-admin-lifecycle ""
-create_role_for_function campus-student ""
-create_role_for_function campus-student-queue "$(read_queue student-queue)"
-create_role_for_function campus-student-reminders ""
-create_role_for_function campus-student-digest ""
+create_role_for_function campus-student "$READ_EMAIL_SECRET"
+create_role_for_function campus-student-queue "$(read_queue student-queue), $READ_EMAIL_SECRET"
+create_role_for_function campus-student-reminders "$READ_EMAIL_SECRET"
+create_role_for_function campus-student-digest "$READ_EMAIL_SECRET"
 create_role_for_function campus-notifications ""
-create_role_for_function campus-notifications-queue "$(read_queue notifications-queue)"
+create_role_for_function campus-notifications-queue "$(read_queue notifications-queue), $READ_EMAIL_SECRET"
 
 echo "Done. Every Lambda has its own role with only the permissions it needs."

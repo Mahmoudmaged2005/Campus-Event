@@ -7,6 +7,8 @@ REGION="${AWS_DEFAULT_REGION:-eu-central-1}"
 ROLE_ARN_START="arn:aws:iam::000000000000:role"
 FLOCI_INSIDE_DOCKER="http://campus-events-floci:4566"
 BUCKET="${S3_BUCKET:-campus-events-images}"
+ENV_FILE="$INFRA_FOLDER/../backend/.env"
+EMAIL_USER=$(grep "^EMAIL_USER=" "$ENV_FILE" | head -1 | sed 's/^EMAIL_USER=//; s/^"//; s/"$//; s/\r$//')
 
 cd "$DIST_FOLDER"
 SETTINGS_FILE="lambda-settings.json"
@@ -14,6 +16,8 @@ cat > "$SETTINGS_FILE" <<EOF
 {
   "Variables": {
     "DATABASE_SECRET_NAME": "campus-events/database-url",
+    "EMAIL_USER": "$EMAIL_USER",
+    "EMAIL_SECRET_NAME": "campus-events/email-app-password",
     "SECRETS_ENDPOINT": "$FLOCI_INSIDE_DOCKER",
     "CORS_ORIGINS": "http://localhost:5173",
     "S3_ENDPOINT": "$FLOCI_INSIDE_DOCKER",
