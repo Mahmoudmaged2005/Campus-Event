@@ -12,6 +12,11 @@ echo "Creating SNS topic $ALERTS_TOPIC_NAME for alarm messages"
 ALERTS_TOPIC_ARN=$(aws sns create-topic --name "$ALERTS_TOPIC_NAME" --region "$REGION" --query TopicArn --output text)
 echo "Alerts topic: $ALERTS_TOPIC_ARN"
 
+ALERT_EMAIL="${ALERT_EMAIL:-team@example.com}"
+echo "Sending alarm messages to $ALERT_EMAIL"
+aws sns subscribe --region "$REGION" --topic-arn "$ALERTS_TOPIC_ARN" \
+  --protocol email --notification-endpoint "$ALERT_EMAIL" >/dev/null
+
 alarm_on_failed_queue() {
   QUEUE_NAME="$1"
   ALARM_NAME="campus-$QUEUE_NAME-has-messages"
