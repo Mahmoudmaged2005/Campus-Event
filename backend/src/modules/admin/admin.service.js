@@ -2,6 +2,7 @@ import { db } from '../../db/client.js';
 import { AppError } from '../../shared/errors.js';
 import { writeAuditLog } from '../audit/audit.service.js';
 import { getTrustScore } from './trust.service.js';
+import { publishMessage } from '../../shared/messaging.js';
 
 const includeCategoryAndOrganizer = {
   category: { select: { id: true, name: true } },
@@ -47,6 +48,7 @@ export async function approveEvent(eventId, adminId) {
     title: event.title,
     organizerId: event.organizerId,
   });
+  await publishMessage('event.approved', { eventId: eventId, organizerId: event.organizerId });
   return approvedEvent;
 }
 
@@ -62,5 +64,6 @@ export async function rejectEvent(eventId, adminId, reason) {
     organizerId: event.organizerId,
     reason: reason,
   });
+  await publishMessage('event.rejected', { eventId: eventId, organizerId: event.organizerId });
   return rejectedEvent;
 }

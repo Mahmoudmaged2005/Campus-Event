@@ -1,6 +1,7 @@
 import { db } from '../../db/client.js';
 import { AppError } from '../../shared/errors.js';
 import { writeAuditLog } from '../audit/audit.service.js';
+import { publishMessage } from '../../shared/messaging.js';
 
 const includeEventAndReporter = {
   event: { select: { id: true, title: true, status: true, organizerId: true } },
@@ -47,6 +48,9 @@ export async function resolveFlag(adminId, flagId) {
     reason: flag.reason,
     eventCancelled: eventCancelled,
   });
+  if (eventCancelled) {
+    await publishMessage('event.cancelled', { eventId: flag.eventId, organizerId: flag.event.organizerId });
+  }
   return db().flag.findUnique({ where: { id: flagId }, include: includeEventAndReporter });
 }
 
