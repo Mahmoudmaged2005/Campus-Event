@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { config } from './shared/config.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 import { requestLogger } from './shared/middleware/requestLogger.js';
+import { apiRateLimit } from './shared/middleware/rateLimit.js';
 
 function sendHealth(req, res) {
   res.json({ status: 'ok' });
@@ -20,6 +21,7 @@ export function makeApp(moduleRoutes) {
   app.use(helmet());
   app.use(cors({ origin: config.corsOrigins }));
   app.use(requestLogger);
+  app.use(apiRateLimit);
   app.use(express.json({ limit: '50kb' }));
 
   app.get('/api/health', sendHealth);

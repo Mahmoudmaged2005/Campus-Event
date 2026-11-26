@@ -20,6 +20,7 @@ cat > "$SETTINGS_FILE" <<EOF
     "EMAIL_SECRET_NAME": "campus-events/email-app-password",
     "SECRETS_ENDPOINT": "$FLOCI_INSIDE_DOCKER",
     "CORS_ORIGINS": "http://localhost:5173",
+    "RATE_LIMIT_MAX": "${RATE_LIMIT_MAX:-100}",
     "S3_ENDPOINT": "$FLOCI_INSIDE_DOCKER",
     "S3_BUCKET": "$BUCKET",
     "S3_PUBLIC_URL": "http://localhost:4566/$BUCKET",
