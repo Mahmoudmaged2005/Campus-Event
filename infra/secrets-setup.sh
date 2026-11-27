@@ -29,11 +29,13 @@ if [ -z "$DATABASE_URL" ]; then
 fi
 save_secret campus-events/database-url "$DATABASE_URL" "Neon database address for the Campus Events Lambdas"
 
-EMAIL_APP_PASSWORD=$(read_env_value EMAIL_APP_PASSWORD)
-if [ -z "$EMAIL_APP_PASSWORD" ]; then
-  echo "EMAIL_APP_PASSWORD is missing in backend/.env, the deployed app will not send emails"
+MAILJET_API_KEY=$(read_env_value MAILJET_API_KEY)
+MAILJET_SECRET_KEY=$(read_env_value MAILJET_SECRET_KEY)
+if [ -z "$MAILJET_API_KEY" ] || [ -z "$MAILJET_SECRET_KEY" ]; then
+  echo "The Mailjet keys are missing in backend/.env, the deployed app will not send emails"
 else
-  save_secret campus-events/email-app-password "$EMAIL_APP_PASSWORD" "Gmail app password for Campus Events emails"
+  save_secret campus-events/mailjet-api-key "$MAILJET_API_KEY" "Mailjet API key for Campus Events emails"
+  save_secret campus-events/mailjet-secret-key "$MAILJET_SECRET_KEY" "Mailjet secret key for Campus Events emails"
 fi
 
 echo "Done. The secrets are stored in Secrets Manager."

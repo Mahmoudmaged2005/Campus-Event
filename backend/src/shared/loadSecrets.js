@@ -21,4 +21,5 @@ async function loadSecretInto(settingName, secretNameSetting) {
 }
 
 await loadSecretInto('DATABASE_URL', 'DATABASE_SECRET_NAME');
-await loadSecretInto('EMAIL_APP_PASSWORD', 'EMAIL_SECRET_NAME');
+await loadSecretInto('MAILJET_API_KEY', 'MAILJET_API_KEY_SECRET_NAME');
+await loadSecretInto('MAILJET_SECRET_KEY', 'MAILJET_SECRET_KEY_SECRET_NAME');
