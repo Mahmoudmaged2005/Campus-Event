@@ -1,0 +1,4 @@
+ALTER TABLE "User" ADD COLUMN "emailVerified" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN "verifyCodeHash" TEXT,
+ADD COLUMN "verifyCodeExpiresAt" TIMESTAMP(3),
+ADD COLUMN "verifyTries" INTEGER NOT NULL DEFAULT 0;

@@ -38,6 +38,11 @@ model User {
   role         Role     @default(STUDENT)
   createdAt    DateTime @default(now())
 
+  emailVerified       Boolean   @default(true)
+  verifyCodeHash      String?
+  verifyCodeExpiresAt DateTime?
+  verifyTries         Int       @default(0)
+
   sessions           Session[]
   organizedEvents    Event[]
   flags              Flag[]
@@ -189,4 +194,12 @@ model AuditLog {
   actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([entityType, entityId])
+}
+
+model RateLimitCounter {
+  key     String   @id
+  hits    Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt])
 }
