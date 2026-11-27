@@ -87,7 +87,7 @@ export default function RescheduleEvent() {
   }
 
   return (
-    <section className="card">
+    <section className="card form-page">
       <div className="page-title-row">
         <h1>Reschedule event</h1>
         <Link to="/organizer">Back to my events</Link>

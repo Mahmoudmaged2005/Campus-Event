@@ -20,3 +20,12 @@ export function showCairoDateTime(isoText) {
 export function showCairoClock(isoText) {
   return formatInTimeZone(isoText, CAIRO, 'HH:mm');
 }
+
+export function showCairoRange(startIso, endIso) {
+  const startDay = formatInTimeZone(startIso, CAIRO, 'yyyy-MM-dd');
+  const endDay = formatInTimeZone(endIso, CAIRO, 'yyyy-MM-dd');
+  if (startDay === endDay) {
+    return showCairoDateTime(startIso) + ' to ' + showCairoClock(endIso);
+  }
+  return showCairoDateTime(startIso) + ' to ' + showCairoDateTime(endIso);
+}

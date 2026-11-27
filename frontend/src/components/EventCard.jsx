@@ -1,11 +1,15 @@
 import StatusBadge from './StatusBadge.jsx';
-import { showCairoDateTime, showCairoClock } from '../utils/cairoDates.js';
+import { showCairoRange } from '../utils/cairoDates.js';
+
+function hideBrokenPoster(errorEvent) {
+  errorEvent.target.style.display = 'none';
+}
 
 export default function EventCard({ event, children }) {
   return (
     <article className="event-card">
       {event.imageUrl ? (
-        <img className="event-poster" src={event.imageUrl} alt={'Poster for ' + event.title} />
+        <img className="event-poster" src={event.imageUrl} alt={'Poster for ' + event.title} onError={hideBrokenPoster} />
       ) : null}
       <div className="event-body">
         <div className="event-title-row">
@@ -13,19 +17,19 @@ export default function EventCard({ event, children }) {
           <StatusBadge status={event.status} />
         </div>
         <p className="event-when">
-          {showCairoDateTime(event.startsAt)} to {showCairoClock(event.endsAt)}
+          {showCairoRange(event.startsAt, event.endsAt)}
         </p>
         <p className="event-where">
           {event.location}
-          {event.category ? ', ' + event.category.name : ''}
+          {event.category ? ' · ' + event.category.name : ''}
+          {event.capacity ? ' · ' + event.capacity + ' places' : ''}
+          {event.seriesId ? ' · repeating event' : ''}
         </p>
-        {event.capacity ? <p className="event-where">Places: {event.capacity}</p> : null}
-        {event.seriesId ? <p className="event-where">Repeating event</p> : null}
-        <p>{event.description}</p>
+        <p className="event-description">{event.description}</p>
         {event.status === 'REJECTED' && event.rejectionReason ? (
           <p className="event-rejection">Rejected because: {event.rejectionReason}</p>
         ) : null}
-        <div className="event-actions">{children}</div>
+        {children ? <div className="event-actions">{children}</div> : null}
       </div>
     </article>
   );

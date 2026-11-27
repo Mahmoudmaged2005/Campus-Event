@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { apiRequest } from '../../api/api.js';
 import Message from '../../components/Message.jsx';
+import StatusBadge from '../../components/StatusBadge.jsx';
 import Alternatives from './Alternatives.jsx';
 import SeriesOptions from './SeriesOptions.jsx';
 import { inputToIso, isoToInput, showCairoDateTime } from '../../utils/cairoDates.js';
@@ -53,6 +54,7 @@ export default function EventForm() {
   const [message, setMessage] = useState({ type: 'info', text: '' });
   const [locked, setLocked] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState('');
 
   useEffect(function () {
     async function loadPage() {
@@ -62,6 +64,7 @@ export default function EventForm() {
         if (editing) {
           const eventData = await apiRequest('/events/' + id);
           setForm(eventToForm(eventData.event));
+          setStatus(eventData.event.status);
           if (eventData.event.status !== 'PENDING' && eventData.event.status !== 'REJECTED') {
             setLocked(true);
             setMessage({ type: 'info', text: 'This event is ' + eventData.event.status.toLowerCase() + ' and cannot be edited.' });
@@ -120,12 +123,15 @@ export default function EventForm() {
     }
   }
 
-  async function saveEvent() {
+  async function saveChanges() {
+    const data = await apiRequest('/events/' + id, { method: 'PATCH', body: formToBody(form) });
+    setForm(eventToForm(data.event));
+    setStatus(data.event.status);
+    setMessage({ type: 'success', text: 'Changes saved. The event is waiting for approval.' });
+  }
+
+  async function createNewEvent() {
     const body = formToBody(form);
-    if (editing) {
-      await apiRequest('/events/' + id, { method: 'PATCH', body: body });
-      return 'Event saved. It is waiting for approval.';
-    }
     if (repeat.enabled) {
       const seriesBody = { ...body, ...repeatToBody(repeat), onClash: repeat.onClash };
       const result = await apiRequest('/events/series', { method: 'POST', body: seriesBody });
@@ -140,8 +146,12 @@ export default function EventForm() {
     setSaving(true);
     setClash(null);
     try {
-      const successText = await saveEvent();
-      navigate('/organizer', { state: { message: successText } });
+      if (editing) {
+        await saveChanges();
+      } else {
+        const successText = await createNewEvent();
+        navigate('/organizer', { state: { message: successText } });
+      }
     } catch (error) {
       showError(error);
     }
@@ -179,9 +189,12 @@ export default function EventForm() {
   }
 
   return (
-    <section className="card">
+    <section className="card form-page">
       <div className="page-title-row">
-        <h1>{editing ? 'Edit event' : 'New event'}</h1>
+        <div className="event-title-row">
+          <h1>{editing ? 'Edit event' : 'New event'}</h1>
+          {status ? <StatusBadge status={status} /> : null}
+        </div>
         <Link to="/organizer">Back to my events</Link>
       </div>
       <Message type={message.type} text={message.text} />
