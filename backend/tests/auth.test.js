@@ -78,14 +78,22 @@ after(async function () {
   server.close();
 });
 
-test('register creates a Student even when another role is sent', async function () {
+test('register refuses the ADMIN role and makes a Student when no role is sent', async function () {
+  const adminTry = await callApi('POST', '/api/auth/register', {
+    name: 'Want Admin',
+    email: 'want-admin' + EMAIL_ENDING,
+    password: studentPassword,
+    role: 'ADMIN',
+  });
+  assert.equal(adminTry.status, 400);
   const response = await callApi('POST', '/api/auth/register', {
     name: 'Test Student',
     email: studentEmail,
     password: studentPassword,
-    role: 'ADMIN',
   });
   assert.equal(response.status, 201);
+  assert.equal(response.data.needsVerification, true);
+  await db().user.update({ where: { email: studentEmail }, data: { emailVerified: true } });
   assert.equal(response.data.user.role, 'STUDENT');
   assert.equal(response.data.user.email, studentEmail);
   assert.equal(response.data.user.passwordHash, undefined);
