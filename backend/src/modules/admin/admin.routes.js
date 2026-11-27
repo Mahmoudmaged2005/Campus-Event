@@ -13,6 +13,7 @@ import {
   resolveFlag,
   dismissFlag,
   runLifecycle,
+  auditLog,
 } from './admin.controller.js';
 
 export const adminRouter = Router();
@@ -32,3 +33,5 @@ adminRouter.post('/flags/:id/resolve', adminOnly, resolveFlag);
 adminRouter.post('/flags/:id/dismiss', adminOnly, dismissFlag);
 
 adminRouter.post('/lifecycle/run', adminOnly, runLifecycle);
+
+adminRouter.get('/audit-log', adminOnly, auditLog);

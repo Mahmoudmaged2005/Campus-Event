@@ -17,6 +17,7 @@ export const browseEventsSchema = z.object({
   from: dateTimeText.optional(),
   to: dateTimeText.optional(),
   categoryId: z.coerce.number('categoryId must be a number').int().positive().optional(),
+  recommended: z.enum(['true', 'false'], 'recommended must be true or false').optional(),
 });
 
 export const createReminderSchema = z.object({

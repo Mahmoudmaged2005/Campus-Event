@@ -3,6 +3,8 @@ import * as adminService from './admin.service.js';
 import * as categoriesService from './categories.service.js';
 import * as flagsService from './flags.service.js';
 import * as lifecycleService from './lifecycle.service.js';
+import { listAuditLogs } from '../audit/audit.service.js';
+import { auditLogQuerySchema } from './admin.schema.js';
 
 function readIdFromUrl(req) {
   const id = Number(req.params.id);
@@ -59,5 +61,19 @@ export async function dismissFlag(req, res) {
 
 export async function runLifecycle(req, res) {
   const result = await lifecycleService.completePastEvents(req.user.id);
+  res.json(result);
+}
+
+function readAuditFilters(req) {
+  const checked = auditLogQuerySchema.safeParse(req.query);
+  if (!checked.success) {
+    const firstIssue = checked.error.issues[0];
+    throw new AppError(400, firstIssue.path.join('.') + ': ' + firstIssue.message);
+  }
+  return checked.data;
+}
+
+export async function auditLog(req, res) {
+  const result = await listAuditLogs(readAuditFilters(req));
   res.json(result);
 }

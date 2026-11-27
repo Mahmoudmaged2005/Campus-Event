@@ -32,3 +32,9 @@ export const updateCategorySchema = z
     isActive: z.boolean('isActive must be true or false').optional(),
   })
   .refine(hasAtLeastOneField, 'Send name or isActive to change');
+
+export const auditLogQuerySchema = z.object({
+  action: z.string().regex(/^[a-z.]{3,60}$/, 'action must look like event.approved').optional(),
+  beforeId: z.coerce.number('beforeId must be a number').int().positive().optional(),
+  limit: z.coerce.number('limit must be a number').int().min(1).max(100).default(50),
+});

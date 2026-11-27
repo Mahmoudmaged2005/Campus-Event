@@ -379,6 +379,25 @@ test('recommendations show followed category events, not saved ones, with a reas
     }
   }
   assert.equal(suggestedReason, 'You follow Student Test' + CATEGORY_ENDING);
+
+  const range = '?from=' + fromNow(0).toISOString() + '&to=' + fromNow(30 * ONE_DAY).toISOString();
+  const calendar = await callApi('GET', '/api/student/events' + range + '&recommended=true', undefined, newStudent);
+  assert.equal(calendar.status, 200);
+  const calendarIds = listIds(calendar.data.events, function (event) {
+    return event.id;
+  });
+  assert.equal(calendarIds.includes(suggested.id), true);
+  assert.equal(calendarIds.includes(alreadySaved.id), true);
+  const otherCategory = await callApi('GET', '/api/student/events' + range + '&recommended=true&categoryId=' + offCategoryId, undefined, newStudent);
+  assert.deepEqual(otherCategory.data.events, []);
+
+  await callApi('DELETE', '/api/student/categories/' + categoryId + '/follow', undefined, newStudent);
+  const noInterests = await callApi('GET', '/api/student/events' + range + '&recommended=true', undefined, newStudent);
+  const noInterestIds = listIds(noInterests.data.events, function (event) {
+    return event.id;
+  });
+  assert.equal(noInterestIds.includes(alreadySaved.id), true);
+  assert.equal(noInterestIds.includes(suggested.id), false);
 });
 
 test('digest shows only the next 7 days and the send job creates a notification', async function () {

@@ -1,5 +1,6 @@
 import { db } from '../../db/client.js';
 import { AppError } from '../../shared/errors.js';
+import { collectInterests } from './recommend.service.js';
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_DAYS = 31;
@@ -35,6 +36,24 @@ async function findStudentEventIds(table, studentId, eventIds) {
   return ids;
 }
 
+async function onlyRecommended(studentId, where, filters) {
+  const interests = await collectInterests(studentId);
+  if (interests.followedCategoryIds.length === 0) {
+    if (interests.knownEventIds.length === 0) {
+      return false;
+    }
+    where.id = { in: interests.knownEventIds };
+    return true;
+  }
+  if (filters.categoryId && !interests.followedCategoryIds.includes(filters.categoryId)) {
+    return false;
+  }
+  if (!filters.categoryId) {
+    where.categoryId = { in: interests.followedCategoryIds };
+  }
+  return true;
+}
+
 export async function browseEvents(studentId, filters) {
   const range = readRange(filters.from, filters.to);
   const where = {
@@ -44,6 +63,12 @@ export async function browseEvents(studentId, filters) {
   };
   if (filters.categoryId) {
     where.categoryId = filters.categoryId;
+  }
+  if (filters.recommended === 'true') {
+    const hasInterests = await onlyRecommended(studentId, where, filters);
+    if (!hasInterests) {
+      return [];
+    }
   }
   const events = await db().event.findMany({
     where: where,

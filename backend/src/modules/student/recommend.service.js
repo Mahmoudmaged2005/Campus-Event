@@ -10,7 +10,7 @@ function addEventInterest(interests, event) {
   interests.likedCategoryIds.push(event.categoryId);
 }
 
-async function collectInterests(studentId) {
+export async function collectInterests(studentId) {
   const interests = { followedCategoryIds: [], likedCategoryIds: [], knownEventIds: [] };
   const followedCategories = await listFollowedCategories(studentId);
   for (const category of followedCategories) {
