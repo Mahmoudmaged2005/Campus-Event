@@ -39,7 +39,7 @@ READ_EMAIL_SECRET="{
   \"Sid\": \"ReadEmailSecret\",
   \"Effect\": \"Allow\",
   \"Action\": \"secretsmanager:GetSecretValue\",
-  \"Resource\": \"arn:aws:secretsmanager:$REGION:$ACCOUNT:secret:campus-events/email-app-password-*\"
+  \"Resource\": \"arn:aws:secretsmanager:$REGION:$ACCOUNT:secret:campus-events/mailjet-*\"
 }"
 
 write_logs() {
@@ -82,6 +82,7 @@ create_role_for_function() {
 }
 
 create_role_for_function campus-auth "$READ_EMAIL_SECRET"
+create_role_for_function campus-authorizer ""
 create_role_for_function campus-events "$SEND_MESSAGES, $SAVE_POSTERS"
 create_role_for_function campus-admin "$SEND_MESSAGES"
 create_role_for_function campus-admin-lifecycle ""

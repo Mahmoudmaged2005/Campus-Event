@@ -8,7 +8,7 @@ ROLE_ARN_START="arn:aws:iam::000000000000:role"
 FLOCI_INSIDE_DOCKER="http://campus-events-floci:4566"
 BUCKET="${S3_BUCKET:-campus-events-images}"
 ENV_FILE="$INFRA_FOLDER/../backend/.env"
-EMAIL_USER=$(grep "^EMAIL_USER=" "$ENV_FILE" | head -1 | sed 's/^EMAIL_USER=//; s/^"//; s/"$//; s/\r$//')
+EMAIL_FROM=$(grep "^EMAIL_FROM=" "$ENV_FILE" | head -1 | sed 's/^EMAIL_FROM=//; s/^"//; s/"$//; s/\r$//')
 
 cd "$DIST_FOLDER"
 SETTINGS_FILE="lambda-settings.json"
@@ -16,11 +16,13 @@ cat > "$SETTINGS_FILE" <<EOF
 {
   "Variables": {
     "DATABASE_SECRET_NAME": "campus-events/database-url",
-    "EMAIL_USER": "$EMAIL_USER",
-    "EMAIL_SECRET_NAME": "campus-events/email-app-password",
+    "EMAIL_FROM": "$EMAIL_FROM",
+    "MAILJET_API_KEY_SECRET_NAME": "campus-events/mailjet-api-key",
+    "MAILJET_SECRET_KEY_SECRET_NAME": "campus-events/mailjet-secret-key",
     "SECRETS_ENDPOINT": "$FLOCI_INSIDE_DOCKER",
     "CORS_ORIGINS": "http://localhost:5173",
     "RATE_LIMIT_MAX": "${RATE_LIMIT_MAX:-100}",
+    "RATE_LIMIT_STORE": "database",
     "S3_ENDPOINT": "$FLOCI_INSIDE_DOCKER",
     "S3_BUCKET": "$BUCKET",
     "S3_PUBLIC_URL": "http://localhost:4566/$BUCKET",
@@ -53,6 +55,7 @@ create_or_update_function() {
 }
 
 create_or_update_function campus-auth auth index.handler
+create_or_update_function campus-authorizer auth index.authorizerHandler
 create_or_update_function campus-events events index.handler
 create_or_update_function campus-admin admin index.handler
 create_or_update_function campus-admin-lifecycle admin index.lifecycleHandler

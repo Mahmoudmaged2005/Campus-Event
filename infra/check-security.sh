@@ -69,7 +69,21 @@ check "Content-Security-Policy is set" "$(echo "$HEADERS" | grep -q '^content-se
 check "X-Powered-By is hidden" "$(echo "$HEADERS" | grep -q '^x-powered-by:' && echo no || echo yes)"
 
 echo
-echo "2. Logins and roles"
+echo "2. The login guard at API Gateway"
+count_requests_reaching_events() {
+  MSYS_NO_PATHCONV=1 aws logs filter-log-events --log-group-name /aws/lambda/campus-events \
+    --query 'events[].message' --output text 2>/dev/null | tr '\t' '\n' | grep -c '"path":"/api/events/mine"'
+}
+BEFORE=$(count_requests_reaching_events)
+GUARD_CODE=$(call GET /events/mine "0123456789abcdef0123456789abcdef")
+check "The gateway answers 401 for a made-up token" "$(same "$GUARD_CODE" 401)"
+check "The gateway answer uses our error format" "$(grep -q '"error"' "$BODY" && echo yes || echo no)"
+sleep 4
+AFTER=$(count_requests_reaching_events)
+check "Requests without a valid login never reach the events Lambda" "$(same "$AFTER" "$BEFORE")"
+
+echo
+echo "3. Logins and roles"
 check "No login gives 401" "$(same "$(call GET /events/mine "")" 401)"
 check "A made-up token gives 401" "$(same "$(call GET /events/mine "0123456789abcdef0123456789abcdef")" 401)"
 check "A student cannot create events (403)" "$(same "$(call POST /events "$STUDENT_TOKEN" '{"title":"x"}')" 403)"
@@ -78,7 +92,7 @@ call GET /auth/me "$ORGANIZER_TOKEN" >/dev/null
 check "The password hash is never sent back" "$(grep -qi 'passwordHash' "$BODY" && echo no || echo yes)"
 
 echo
-echo "3. Ownership"
+echo "4. Ownership"
 EVENT='{"title":"Security Check Event","description":"Made by check-security.sh","location":"Security Check Room","startsAt":"2032-01-10T10:00:00Z","endsAt":"2032-01-10T11:00:00Z","categoryId":1}'
 call POST /events "$ORGANIZER_TOKEN" "$EVENT" >/dev/null
 EVENT_ID=$(python -c "import sys, json; print(json.load(open(sys.argv[1]))['event']['id'])" "$BODY" 2>/dev/null)
@@ -87,7 +101,7 @@ check "Another organizer cannot edit my event (404)" "$(same "$(call PATCH "/eve
 check "Another organizer cannot delete my event (404)" "$(same "$(call DELETE "/events/$EVENT_ID" "$OTHER_TOKEN")" 404)"
 
 echo
-echo "4. Input checks"
+echo "5. Input checks"
 LONG_TITLE=$(printf 'a%.0s' $(seq 1 200))
 check "A 200 character title is refused (400)" "$(same "$(call PATCH "/events/$EVENT_ID" "$ORGANIZER_TOKEN" "{\"title\":\"$LONG_TITLE\"}")" 400)"
 check "A <script> in the title is refused (400)" "$(same "$(call PATCH "/events/$EVENT_ID" "$ORGANIZER_TOKEN" '{"title":"<script>alert(1)</script>hi"}')" 400)"
@@ -102,14 +116,14 @@ call DELETE "/events/$EVENT_ID" "$ORGANIZER_TOKEN" >/dev/null
 check "My test event is deleted again" "$(same "$(call GET "/events/$EVENT_ID" "$ORGANIZER_TOKEN")" 404)"
 
 echo
-echo "5. Browser origin (CORS)"
+echo "6. Browser origin (CORS)"
 ALLOWED=$(curl -s -m 60 -D - -o /dev/null -H "Origin: https://evil.example" "$API/health" | tr -d '\r' | grep -i '^access-control-allow-origin:')
 check "A strange website is not allowed" "$(echo "$ALLOWED" | grep -qi 'evil.example' && echo no || echo yes)"
 OUR_SITE=$(curl -s -m 60 -D - -o /dev/null -H "Origin: http://localhost:5173" "$API/health" | tr -d '\r' | grep -i '^access-control-allow-origin:')
 check "Our website is allowed, and only by its exact address (no *)" "$(echo "$OUR_SITE" | grep -qi 'http://localhost:5173' && echo yes || echo no)"
 
 echo
-echo "6. Cloud settings"
+echo "7. Cloud settings"
 WILDCARDS=0
 for ROLE in $(aws iam list-roles --query "Roles[?starts_with(RoleName, 'campus-')].RoleName" --output text); do
   for POLICY in $(aws iam list-role-policies --role-name "$ROLE" --query PolicyNames --output text); do
@@ -121,23 +135,25 @@ done
 check "No IAM role allows everything (Resource: *)" "$(same "$WILDCARDS" 0)"
 SETTINGS=$(aws lambda get-function-configuration --function-name campus-events --query Environment.Variables --output json)
 check "The database password is not in the Lambda settings" "$(echo "$SETTINGS" | grep -q 'postgresql://' && echo no || echo yes)"
-check "The Gmail password is not in the Lambda settings" "$(echo "$SETTINGS" | grep -q 'EMAIL_APP_PASSWORD' && echo no || echo yes)"
+check "The Mailjet keys are not in the Lambda settings" "$(echo "$SETTINGS" | grep -q -e '"MAILJET_API_KEY"' -e '"MAILJET_SECRET_KEY"' && echo no || echo yes)"
 AUTH_LOGS=$(MSYS_NO_PATHCONV=1 aws logs filter-log-events --log-group-name /aws/lambda/campus-auth --query 'events[].message' --output text 2>/dev/null)
 check "Passwords and tokens never appear in the logs" "$(echo "$AUTH_LOGS" | grep -q -e "$PASSWORD" -e "$ORGANIZER_TOKEN" && echo no || echo yes)"
 
 echo
-echo "7. Too many requests"
+echo "8. Too many requests"
 LOGIN_CODES=""
 for TRY in $(seq 1 12); do
   LOGIN_CODES="$LOGIN_CODES $(call POST /auth/login "" '{"email":"nobody@security.check","password":"wrongpassword"}')"
 done
 check "Guessing passwords is stopped after 10 tries (429)" "$(echo "$LOGIN_CODES" | grep -q 429 && echo yes || echo no)"
-FLOOD_CODES=""
-for TRY in $(seq 1 110); do
-  FLOOD_CODES="$FLOOD_CODES $(call GET /events/mine "")"
-done
-check "110 requests in a minute are stopped (429)" "$(echo "$FLOOD_CODES" | grep -q 429 && echo yes || echo no)"
-FAKE_IP=$(curl -s -m 60 -o /dev/null -w "%{http_code}" -H "X-Forwarded-For: 9.9.9.9" "$API/events/mine")
+FLOOD_CODES=$(seq 1 150 | xargs -P 10 -I{} curl -s -m 60 -o /dev/null -w "%{http_code} " \
+  -H "Authorization: Bearer $ORGANIZER_TOKEN" "$API/events/mine")
+ALLOWED_COUNT=$(echo "$FLOOD_CODES" | tr ' ' '\n' | grep -c 200)
+echo "        150 requests, 10 at a time: $ALLOWED_COUNT answered, the rest blocked"
+check "A logged-in user sending 10 at a time is stopped (429)" "$(echo "$FLOOD_CODES" | grep -q 429 && echo yes || echo no)"
+check "All Lambda copies share one limit (at most 100 answered)" "$([ "$ALLOWED_COUNT" -le 100 ] && echo yes || echo no)"
+FAKE_IP=$(curl -s -m 60 -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $ORGANIZER_TOKEN" \
+  -H "X-Forwarded-For: 9.9.9.9" "$API/events/mine")
 check "A fake X-Forwarded-For does not get around the limit" "$(same "$FAKE_IP" 429)"
 
 rm -rf "$WORK_FOLDER"
